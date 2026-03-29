@@ -81,7 +81,7 @@ const Navbar = () => {
             {user ? (
               <>
                 <div className="flex items-center space-x-2 bg-dark-800 px-3 py-1 rounded-full">
-                  <span className="text-accent font-mono text-sm">₣{user.balance?.toLocaleString()}</span>
+                  <span className="text-accent font-mono text-sm">KSh {user.balance?.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-400 text-sm">{user.phone}</span>

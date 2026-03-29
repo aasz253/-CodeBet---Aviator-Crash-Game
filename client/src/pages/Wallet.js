@@ -76,7 +76,7 @@ const Wallet = () => {
       }
 
       if (amount < 100) {
-        setMessage('Minimum withdrawal is ₣100');
+        setMessage('Minimum withdrawal is KSh 100');
         return;
       }
 
@@ -132,7 +132,7 @@ const Wallet = () => {
         <div className="glass rounded-2xl p-6">
           <h3 className="text-gray-400 text-sm mb-2">Available Balance</h3>
           <div className="text-3xl font-bold text-accent font-mono">
-            ₣{user?.balance?.toLocaleString() || 0}
+            KSh {user?.balance?.toLocaleString() || 0}
           </div>
         </div>
 
@@ -176,7 +176,7 @@ const Wallet = () => {
                 </div>
                 <div className={`font-mono font-semibold ${getTransactionColor(tx.type)}`}>
                   {tx.type === 'deposit' || tx.type === 'cashout' ? '+' : '-'}
-                  ₣{tx.amount?.toLocaleString()}
+                  KSh {tx.amount?.toLocaleString()}
                 </div>
               </div>
             ))}
@@ -265,7 +265,7 @@ const Wallet = () => {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Amount (Min: ₣100)</label>
+                <label className="block text-sm text-gray-400 mb-2">Amount (Min: KSh 100)</label>
                 <input
                   type="number"
                   value={withdrawAmount}

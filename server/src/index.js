@@ -4,8 +4,12 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Load environment variables from server/.env
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set (hidden)' : 'NOT SET');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
@@ -38,7 +42,13 @@ app.get('/api/health', (req, res) => {
 const GameState = require('./models/GameState');
 const { startGameLoop } = require('./services/gameEngine');
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/codebet')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/codebet', {
+  serverSelectionTimeoutMS: 30000,
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 30000,
+  retryWrites: true,
+  w: 'majority'
+})
   .then(async () => {
     console.log('Connected to MongoDB');
     
@@ -56,7 +66,20 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/codebet')
     startGameLoop(io);
     console.log('Game loop started');
   })
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Connection details:', {
+      uri: process.env.MONGODB_URI ? 'Set (hidden)' : 'NOT SET',
+      timeout: '30 seconds',
+      timestamp: new Date().toISOString()
+    });
+    console.error('\n💡 Troubleshooting tips:');
+    console.error('   1. Check if MongoDB Atlas cluster is active');
+    console.error('   2. Verify username and password are correct');
+    console.error('   3. Ensure IP address is whitelisted in MongoDB Atlas');
+    console.error('   4. Check network/firewall settings');
+    console.error('   5. Try using a different DNS (8.8.8.8)');
+  });
 
 setupSocket(io);
 

@@ -51,7 +51,7 @@ const History = () => {
         <div className="glass rounded-2xl p-6">
           <h3 className="text-gray-400 text-sm mb-2">Total Winnings</h3>
           <div className="text-3xl font-bold text-accent font-mono">
-            ₣{stats?.totalWinnings?.toLocaleString() || 0}
+            KSh {stats?.totalWinnings?.toLocaleString() || 0}
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ const History = () => {
                 {bets.map((bet, index) => (
                   <tr key={index} className="border-b border-dark-700/50">
                     <td className="py-3 font-mono text-gray-300">{bet.roundId}</td>
-                    <td className="py-3 font-mono text-primary">₣{bet.amount?.toLocaleString()}</td>
+                    <td className="py-3 font-mono text-primary">KSh {bet.amount?.toLocaleString()}</td>
                     <td className="py-3 font-mono">
                       {bet.cashedOut ? (
                         <span className="text-success">{bet.cashoutMultiplier?.toFixed(2)}x</span>
@@ -90,7 +90,7 @@ const History = () => {
                     </td>
                     <td className="py-3 font-mono">
                       {bet.cashedOut ? (
-                        <span className="text-success">₣{bet.winnings?.toLocaleString()}</span>
+                        <span className="text-success">KSh {bet.winnings?.toLocaleString()}</span>
                       ) : (
                         <span className="text-gray-500">-</span>
                       )}

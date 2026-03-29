@@ -43,7 +43,7 @@ const BettingPanel = ({
                     : 'bg-dark-800 text-gray-600 cursor-not-allowed'
                 }`}
               >
-                ₣{amount}
+                KSh {amount}
               </button>
             ))}
             <button
@@ -79,7 +79,7 @@ const BettingPanel = ({
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
             <div className="text-sm text-gray-400 mb-1">Your Bet</div>
             <div className="text-2xl font-bold text-primary font-mono">
-              ₣{myBet.amount?.toLocaleString()}
+              KSh {myBet.amount?.toLocaleString()}
             </div>
             {myBet.autoCashoutAt && (
               <div className="text-sm text-gray-400 mt-1">
@@ -100,7 +100,7 @@ const BettingPanel = ({
             disabled={betting || betAmount <= 0 || betAmount > balance}
             className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-white font-semibold py-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {betting ? 'Placing Bet...' : `Place Bet ₣${betAmount}`}
+            {betting ? 'Placing Bet...' : `Place Bet KSh ${betAmount}`}
           </button>
         )}
 

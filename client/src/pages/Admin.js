@@ -108,7 +108,7 @@ const Admin = () => {
                   {users.map((u, index) => (
                     <tr key={index} className="border-b border-dark-700/50">
                       <td className="py-3 text-gray-300">{u.phone}</td>
-                      <td className="py-3 font-mono text-accent">₣{u.balance?.toLocaleString()}</td>
+                      <td className="py-3 font-mono text-accent">KSh {u.balance?.toLocaleString()}</td>
                       <td className="py-3">
                         {u.isAdmin ? (
                           <span className="px-2 py-1 bg-primary/20 text-primary rounded text-sm">Admin</span>

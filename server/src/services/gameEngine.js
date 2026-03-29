@@ -8,17 +8,19 @@ let gameLoopInterval = null;
 let multiplierInterval = null;
 
 const generateCrashPoint = () => {
-  const r = Math.random();
-  const crashPoint = Math.min(2000, Math.floor((100 / (1 - r))) / 100);
+  const crashPoint = Math.random() * 3000;
   return Math.max(1.0, crashPoint);
 };
+
+let lastRoundEndTime = 0;
 
 const startGameLoop = (io) => {
   const gameLoop = async () => {
     try {
       const gameState = await GameState.findOne();
+      const now = Date.now();
       
-      if (gameState.status === 'waiting') {
+      if (gameState.status === 'waiting' && (now - lastRoundEndTime) >= 3000) {
         await startFlyingPhase(gameState, io);
       }
     } catch (error) {
@@ -53,7 +55,7 @@ const startFlyingPhase = async (gameState, io) => {
   
   const updateMultiplier = () => {
     const elapsed = (Date.now() - startTime) / 1000;
-    const newMultiplier = Math.pow(1.008, elapsed * 10);
+    const newMultiplier = 1 + (elapsed * elapsed * 0.5);
     
     if (newMultiplier >= crashPoint || gameState.status === 'crashed') {
       clearInterval(multiplierInterval);
@@ -119,7 +121,8 @@ const endRound = async (gameState, io, finalMultiplier) => {
 
   await gameState.save();
 
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  // Wait 5 seconds (3 seconds crash + 2 more) before starting next round
+  await new Promise(resolve => setTimeout(resolve, 5000));
 
   gameState.status = 'waiting';
   gameState.currentMultiplier = 1.0;
@@ -132,6 +135,8 @@ const endRound = async (gameState, io, finalMultiplier) => {
     status: 'waiting',
     nextRoundId: null
   });
+  
+  lastRoundEndTime = Date.now();
 };
 
 const processAutoCashouts = async (io, currentMultiplier) => {

@@ -27,7 +27,7 @@ const BetsList = ({ bets }) => {
                 {bet.user?.phone ? `${bet.user.phone.slice(0, 4)}***${bet.user.phone.slice(-3)}` : 'Anonymous'}
               </td>
               <td className="py-2 font-mono text-primary">
-                ₣{bet.amount?.toLocaleString()}
+                KSh {bet.amount?.toLocaleString()}
               </td>
               <td className="py-2 font-mono">
                 {bet.cashedOut ? (
@@ -38,7 +38,7 @@ const BetsList = ({ bets }) => {
               </td>
               <td className="py-2">
                 {bet.cashedOut ? (
-                  <span className="text-success text-sm">Won ₣{bet.winnings?.toLocaleString()}</span>
+                  <span className="text-success text-sm">Won KSh {bet.winnings?.toLocaleString()}</span>
                 ) : (
                   <span className="text-yellow-500 text-sm">Pending</span>
                 )}

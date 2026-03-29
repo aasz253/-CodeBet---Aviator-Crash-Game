@@ -5,10 +5,37 @@ import GameCanvas from '../components/GameCanvas';
 import BettingPanel from '../components/BettingPanel';
 import History from '../components/History';
 import BetsList from '../components/BetsList';
+import soundManager from '../utils/soundManager';
 
 const Game = () => {
   const { gameState, myBet, placeBet, cashOut, connected } = useGame();
   const { user } = useAuth();
+  const [soundInitialized, setSoundInitialized] = useState(false);
+
+  useEffect(() => {
+    const handleInteraction = async () => {
+      if (!soundInitialized) {
+        await soundManager.init();
+        setSoundInitialized(true);
+        console.log('Sound initialized on interaction');
+      }
+    };
+    
+    document.addEventListener('click', handleInteraction, { once: true });
+    document.addEventListener('keydown', handleInteraction, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, [soundInitialized]);
+
+  const initSound = async () => {
+    if (!soundInitialized) {
+      await soundManager.init();
+      setSoundInitialized(true);
+    }
+  };
   const [betAmount, setBetAmount] = useState(100);
   const [autoCashout, setAutoCashout] = useState('');
   const [betting, setBetting] = useState(false);
@@ -20,6 +47,7 @@ const Game = () => {
   const canCashOut = gameState.status === 'flying' && myBet && !myBet.cashedOut;
 
   const handlePlaceBet = async () => {
+    await initSound();
     if (!canBet) return;
     setBetting(true);
     setMessage('');
@@ -36,6 +64,7 @@ const Game = () => {
   };
 
   const handleCashOut = async () => {
+    await initSound();
     if (!canCashOut) return;
     setCashingOut(true);
     setMessage('');
@@ -43,7 +72,7 @@ const Game = () => {
     try {
       const result = await cashOut();
       setLastWinnings(result.winnings);
-      setMessage(`Cashout at ${gameState.currentMultiplier.toFixed(2)}x! You won ₣${result.winnings.toLocaleString()}`);
+      setMessage(`Cashout at ${gameState.currentMultiplier.toFixed(2)}x! You won KSh ${result.winnings.toLocaleString()}`);
     } catch (error) {
       setMessage(error);
     } finally {
@@ -87,6 +116,7 @@ const Game = () => {
               <GameCanvas 
                 multiplier={gameState.currentMultiplier} 
                 status={gameState.status}
+                crashPoint={gameState.crashPoint}
               />
               
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
@@ -99,9 +129,9 @@ const Game = () => {
                 }`}>
                   {gameState.currentMultiplier.toFixed(2)}x
                 </div>
-                {gameState.status === 'crashed' && lastWinnings && (
+                  {gameState.status === 'crashed' && lastWinnings && (
                   <div className="mt-4 text-white text-xl animate-pulse">
-                    Last win: ₣{lastWinnings.toLocaleString()}
+                    Last win: KSh {lastWinnings.toLocaleString()}
                   </div>
                 )}
               </div>
@@ -120,7 +150,7 @@ const Game = () => {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">Bet Amount</label>
+                <label className="block text-sm text-gray-400 mb-2">Stake Amount</label>
                 <input
                   type="number"
                   value={betAmount}
@@ -128,21 +158,33 @@ const Game = () => {
                   className="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white font-mono text-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   disabled={!canBet}
                 />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {quickBetAmounts.map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => setBetAmount(amount)}
-                      disabled={!canBet}
-                      className={`px-3 py-1 rounded text-sm font-mono ${
-                        canBet 
-                          ? 'bg-dark-700 hover:bg-primary/20 text-gray-300 hover:text-primary transition-colors' 
-                          : 'bg-dark-800 text-gray-600 cursor-not-allowed'
-                      }`}
-                    >
-                      ₣{amount}
-                    </button>
-                  ))}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setBetAmount(100)}
+                    disabled={!canBet}
+                    className={`flex-1 py-3 rounded-lg font-bold font-mono transition-all ${
+                      canBet && betAmount === 100
+                        ? 'bg-success text-white shadow-lg shadow-success/30'
+                        : canBet 
+                        ? 'bg-dark-700 text-gray-300 hover:bg-success/20 hover:text-success'
+                        : 'bg-dark-800 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    KSh 100
+                  </button>
+                  <button
+                    onClick={() => setBetAmount(500)}
+                    disabled={!canBet}
+                    className={`flex-1 py-3 rounded-lg font-bold font-mono transition-all ${
+                      canBet && betAmount === 500
+                        ? 'bg-success text-white shadow-lg shadow-success/30'
+                        : canBet 
+                        ? 'bg-dark-700 text-gray-300 hover:bg-success/20 hover:text-success'
+                        : 'bg-dark-800 text-gray-600 cursor-not-allowed'
+                    }`}
+                  >
+                    KSh 500
+                  </button>
                 </div>
               </div>
 
@@ -165,7 +207,7 @@ const Game = () => {
                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                   <div className="text-sm text-gray-400 mb-1">Your Bet</div>
                   <div className="text-2xl font-bold text-primary font-mono">
-                    ₣{myBet.amount?.toLocaleString()}
+                    KSh {myBet.amount?.toLocaleString()}
                   </div>
                   {myBet.autoCashoutAt && (
                     <div className="text-sm text-gray-400 mt-1">
@@ -194,9 +236,18 @@ const Game = () => {
                 <button
                   onClick={handlePlaceBet}
                   disabled={betting || betAmount <= 0 || betAmount > user?.balance}
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-white font-semibold py-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/30"
                 >
-                  {betting ? 'Placing Bet...' : `Place Bet ₣${betAmount}`}
+                  {betting ? 'Staking...' : `Stake KSh ${betAmount.toLocaleString()}`}
+                </button>
+              )}
+
+              {gameState.status === 'waiting' && myBet && !canBet && (
+                <button
+                  disabled
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-4 rounded-lg cursor-not-allowed opacity-70"
+                >
+                  Staked KSh {myBet.amount?.toLocaleString()}
                 </button>
               )}
 
@@ -204,7 +255,7 @@ const Game = () => {
                 <button
                   onClick={handleCashOut}
                   disabled={cashingOut}
-                  className="w-full bg-gradient-to-r from-success to-green-600 hover:from-success/80 hover:to-green-600/80 text-white font-semibold py-4 rounded-lg transition-all animate-pulse"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold py-4 rounded-lg transition-all animate-pulse shadow-lg shadow-yellow-500/30"
                 >
                   {cashingOut ? 'Cashing Out...' : `Cash Out @ ${gameState.currentMultiplier.toFixed(2)}x`}
                 </button>
@@ -221,7 +272,7 @@ const Game = () => {
           <div className="glass rounded-2xl p-4">
             <h3 className="text-lg font-semibold mb-4">Your Balance</h3>
             <div className="text-3xl font-bold text-accent font-mono">
-              ₣{user?.balance?.toLocaleString() || 0}
+              KSh {user?.balance?.toLocaleString() || 0}
             </div>
             <p className="text-gray-400 text-sm mt-2">
               {canBet ? 'Ready to bet' : 'Waiting for next round'}

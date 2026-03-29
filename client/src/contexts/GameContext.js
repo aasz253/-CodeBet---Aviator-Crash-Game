@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef, useCallb
 import { io } from 'socket.io-client';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import soundManager from '../utils/soundManager';
 
 const GameContext = createContext();
 
@@ -14,11 +15,28 @@ export const GameProvider = ({ children }) => {
     status: 'waiting',
     currentMultiplier: 1.0,
     roundId: null,
+    crashPoint: null,
     history: []
   });
   const [bets, setBets] = useState([]);
   const [myBet, setMyBet] = useState(null);
   const [connected, setConnected] = useState(false);
+  const soundReadyRef = useRef(false);
+  const statusRef = useRef('waiting');
+
+  useEffect(() => {
+    const initSound = async () => {
+      if (!soundReadyRef.current) {
+        await soundManager.init();
+        soundReadyRef.current = true;
+      }
+    };
+    initSound();
+  }, []);
+
+  useEffect(() => {
+    statusRef.current = gameState.status;
+  }, [gameState.status]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -41,15 +59,25 @@ export const GameProvider = ({ children }) => {
         setGameState(state);
       });
 
-      socketRef.current.on('gameStart', (data) => {
+      socketRef.current.on('gameStart', async (data) => {
+        if (!soundReadyRef.current) {
+          await soundManager.init();
+          soundReadyRef.current = true;
+        }
+        
         setGameState(prev => ({
           ...prev,
           status: 'flying',
           roundId: data.roundId,
+          crashPoint: data.crashPoint,
           currentMultiplier: 1.0
         }));
         setBets([]);
         setMyBet(null);
+        
+        if (soundReadyRef.current) {
+          soundManager.startEngineSound(1);
+        }
       });
 
       socketRef.current.on('multiplierUpdate', (data) => {
@@ -57,6 +85,10 @@ export const GameProvider = ({ children }) => {
           ...prev,
           currentMultiplier: data.multiplier
         }));
+        
+        if (soundReadyRef.current && statusRef.current === 'flying') {
+          soundManager.updateEngineSound(data.multiplier);
+        }
       });
 
       socketRef.current.on('gameCrash', (data) => {
@@ -65,6 +97,11 @@ export const GameProvider = ({ children }) => {
           status: 'crashed',
           currentMultiplier: data.multiplier
         }));
+        
+        if (soundReadyRef.current) {
+          soundManager.stopEngineSound();
+          soundManager.playCrashSound();
+        }
       });
 
       socketRef.current.on('gameWaiting', (data) => {
@@ -72,8 +109,13 @@ export const GameProvider = ({ children }) => {
           ...prev,
           status: 'waiting',
           currentMultiplier: 1.0,
-          roundId: null
+          roundId: null,
+          crashPoint: null
         }));
+        
+        if (soundReadyRef.current) {
+          soundManager.stopEngineSound();
+        }
       });
 
       socketRef.current.on('roundBets', (roundBets) => {
@@ -83,11 +125,17 @@ export const GameProvider = ({ children }) => {
       socketRef.current.on('betPlaced', (data) => {
         if (data.success) {
           fetchGameState();
+          if (soundReadyRef.current) {
+            soundManager.playBetSound();
+          }
         }
       });
 
       socketRef.current.on('autoCashout', (data) => {
         updateBalance(prev => prev + data.winnings);
+        if (soundReadyRef.current) {
+          soundManager.playCashoutSound();
+        }
       });
 
       fetchGameState();
@@ -126,6 +174,9 @@ export const GameProvider = ({ children }) => {
         cashedOut: false
       });
       updateBalance(res.data.balance);
+      if (soundReadyRef.current) {
+        soundManager.playBetSound();
+      }
       return res.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error placing bet';
@@ -145,6 +196,9 @@ export const GameProvider = ({ children }) => {
         }));
       }
       updateBalance(res.data.balance);
+      if (soundReadyRef.current) {
+        soundManager.playCashoutSound();
+      }
       return res.data;
     } catch (error) {
       throw error.response?.data?.message || 'Error cashing out';
